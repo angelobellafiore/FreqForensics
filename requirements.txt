@@ -1,0 +1,35 @@
+# Core deep learning
+torch
+torchvision
+
+# Pretrained models (EfficientNet-B4)
+timm
+
+# Face detection
+facenet-pytorch
+
+# GradCAM
+grad-cam
+
+# Wavelet transforms (for offline inspection and debugging)
+PyWavelets
+
+# Augmentation
+albumentations
+
+# Image and video I/O
+opencv-python-headless
+ffmpeg-python
+Pillow
+
+# Numerical and scientific
+numpy
+scipy
+
+# Data handling
+pandas
+
+# Evaluation and visualisation
+scikit-learn
+matplotlib
+tqdm
