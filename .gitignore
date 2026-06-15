@@ -17,6 +17,7 @@ data/raw/
 data/frames/
 data/crops/
 data/index.csv
+data/index_with_crops.csv
 
 # Training logs and generated results
 logs/
