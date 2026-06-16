@@ -358,8 +358,8 @@ class Trainer:
             f_aug  = torch.cat([f_s_aug,          f_lf_aug,          f_hf_aug],          dim=1)
 
             if compute_cam:
-                with torch.no_grad():
-                    logit_aug = self.model(x_aug)
+                # Grad-CAM needs a computation graph — do NOT use torch.no_grad() here
+                logit_aug = self.model(x_aug)
                 cam_aug = self.grad_cam(x_aug, logit_aug)
 
         # ----- Loss -----
