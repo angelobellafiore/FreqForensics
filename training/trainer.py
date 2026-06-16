@@ -64,18 +64,20 @@ class GradCAM:
     def _save_gradients(self, _module, _grad_input, grad_output) -> None:
         self._gradients = grad_output[0]            # (B, C, H, W)
 
-    def __call__(self, x: torch.Tensor, logit: torch.Tensor) -> torch.Tensor:
+    def __call__(self, x: torch.Tensor) -> torch.Tensor:
         """Compute Grad-CAM maps for a batch.
 
+        Runs its own forward pass on x so that activations and gradients
+        always come from the same call and have matching batch sizes.
+
         Args:
-            x:     (B, 3, 224, 224) input images (already through forward pass)
-            logit: (B, 1) logits from the same forward pass
+            x: (B, 3, 224, 224) input images (fake subset only)
 
         Returns:
             cam: (B, H', W') ReLU-clamped and min-max normalised CAM maps
         """
-        # Back-propagate the logit sum (one scalar per batch element)
         self.model.zero_grad()
+        logit = self.model(x)          # sets self._activations via forward hook
         logit.sum().backward(retain_graph=True)
 
         grads = self._gradients                     # (B, C, H', W')
@@ -331,7 +333,7 @@ class Trainer:
             and fake_mask.any()
         )
         if compute_cam:
-            cam_orig = self.grad_cam(images[fake_mask], logit[fake_mask])
+            cam_orig = self.grad_cam(images[fake_mask])
 
         # ----- Fo-Mixup augmented forward (fakes only) -----
         f_orig = f_aug = None
@@ -358,9 +360,7 @@ class Trainer:
             f_aug  = torch.cat([f_s_aug,          f_lf_aug,          f_hf_aug],          dim=1)
 
             if compute_cam:
-                # Grad-CAM needs a computation graph — do NOT use torch.no_grad() here
-                logit_aug = self.model(x_aug)
-                cam_aug = self.grad_cam(x_aug, logit_aug)
+                cam_aug = self.grad_cam(x_aug)
 
         # ----- Loss -----
         total, breakdown = self.loss_fn(
