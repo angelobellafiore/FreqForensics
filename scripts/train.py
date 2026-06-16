@@ -37,6 +37,8 @@ def parse_args() -> argparse.Namespace:
     # Paths
     p.add_argument('--crops_csv',  type=Path, default=None)
     p.add_argument('--output_dir', type=Path, default=None)
+    p.add_argument('--crops_root', type=Path, default=None,
+                   help='Rewrite crop paths to this root (use on Colab)')
 
     # Data
     p.add_argument('--batch_size',  type=int,   default=None)

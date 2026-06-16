@@ -16,6 +16,10 @@ class TrainingConfig:
     # --- Paths ---
     crops_csv:  Path = Path('data/index_with_crops.csv')
     output_dir: Path = Path('checkpoints')
+    # If set, rewrites the crop_path prefix to this directory.
+    # Use on Colab when the CSV was built on a different machine:
+    #   --crops_root /content/drive/MyDrive/FreqForensics/crops
+    crops_root: Path | None = None
 
     # --- Data ---
     batch_size:  int = 32
@@ -59,11 +63,15 @@ class TrainingConfig:
         # Coerce Path fields
         cfg.crops_csv  = Path(cfg.crops_csv)
         cfg.output_dir = Path(cfg.output_dir)
+        if cfg.crops_root is not None:
+            cfg.crops_root = Path(cfg.crops_root)
         return cfg
 
     def __post_init__(self) -> None:
         self.crops_csv  = Path(self.crops_csv)
         self.output_dir = Path(self.output_dir)
+        if self.crops_root is not None:
+            self.crops_root = Path(self.crops_root)
 
 
 if __name__ == '__main__':

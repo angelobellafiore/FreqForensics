@@ -201,6 +201,18 @@ class Trainer:
                 df['path']
             )
 
+        # Rewrite path prefix when running on a different machine (e.g. Colab).
+        # The CSV was built locally with absolute paths like /home/angelo/...
+        # On Colab the crops live under a different root, so we keep only the
+        # relative tail (method/video_id/frame.png) and prepend crops_root.
+        if cfg.crops_root is not None:
+            import re
+            # Tail is the last 3 path components: method/video_id/frame.png
+            df['path'] = df['path'].apply(
+                lambda p: str(cfg.crops_root / Path(*Path(p).parts[-3:]))
+            )
+            print(f"  Rewrote crop paths to root: {cfg.crops_root}")
+
         train_df = df[df['split'] == 'train'].reset_index(drop=True)
         val_df   = df[df['split'] == 'val'  ].reset_index(drop=True)
 
