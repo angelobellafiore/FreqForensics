@@ -464,7 +464,7 @@ class Trainer:
 
     def _load_checkpoint(self, path: Path) -> None:
         print(f"Resuming from checkpoint: {path}")
-        state = torch.load(path, map_location=self.device)
+        state = torch.load(path, map_location=self.device, weights_only=False)
 
         self.model.load_state_dict(state['model'])
         self.optimizer.load_state_dict(state['optimizer'])
