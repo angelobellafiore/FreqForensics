@@ -177,7 +177,7 @@ def _apply_fo_mixup(
 
 class Trainer:
 
-    def __init__(self, cfg: TrainingConfig) -> None:
+    def __init__(self, cfg: TrainingConfig, resume_from: Path | None = None) -> None:
         self.cfg    = cfg
         self.device = torch.device(cfg.device)
 
@@ -186,6 +186,10 @@ class Trainer:
 
         self.global_step = 0
         self.best_auc    = 0.0
+        self.start_epoch = 1
+
+        if resume_from is not None:
+            self._load_checkpoint(resume_from)
 
     # ------------------------------------------------------------------
     # Setup
@@ -268,7 +272,7 @@ class Trainer:
         cfg = self.cfg
         cfg.output_dir.mkdir(parents=True, exist_ok=True)
 
-        for epoch in range(1, cfg.epochs + 1):
+        for epoch in range(self.start_epoch, cfg.epochs + 1):
             t0 = time.time()
             train_loss = self._train_epoch(epoch)
             elapsed    = time.time() - t0
@@ -457,6 +461,20 @@ class Trainer:
     # ------------------------------------------------------------------
     # Checkpointing
     # ------------------------------------------------------------------
+
+    def _load_checkpoint(self, path: Path) -> None:
+        print(f"Resuming from checkpoint: {path}")
+        state = torch.load(path, map_location=self.device)
+
+        self.model.load_state_dict(state['model'])
+        self.optimizer.load_state_dict(state['optimizer'])
+        self.scheduler.load_state_dict(state['scheduler'])
+        self.global_step = state['global_step']
+        self.best_auc    = state['best_auc']
+        self.start_epoch = state['epoch'] + 1   # resume from the next epoch
+
+        print(f"  Resumed at epoch {state['epoch']}  "
+              f"global_step={self.global_step}  best_auc={self.best_auc:.4f}")
 
     def _save_checkpoint(self, epoch: int, auc: float) -> None:
         state = {

@@ -39,6 +39,8 @@ def parse_args() -> argparse.Namespace:
     p.add_argument('--output_dir', type=Path, default=None)
     p.add_argument('--crops_root', type=Path, default=None,
                    help='Rewrite crop paths to this root (use on Colab)')
+    p.add_argument('--resume', type=Path, default=None,
+                   help='Path to checkpoint to resume from (e.g. checkpoints/latest.pt)')
 
     # Data
     p.add_argument('--batch_size',  type=int,   default=None)
@@ -96,7 +98,8 @@ def main() -> None:
     print(f"  seed        : {cfg.seed}")
     print("=" * 60)
 
-    trainer = Trainer(cfg)
+    resume = args.resume if hasattr(args, 'resume') else None
+    trainer = Trainer(cfg, resume_from=resume)
     trainer.train()
 
     print("\nTraining complete.")
