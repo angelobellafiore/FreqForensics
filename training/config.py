@@ -48,6 +48,7 @@ class TrainingConfig:
     seed:               int = 42
     log_every_n:        int = 50    # log loss breakdown every N steps
     val_every_n_epochs: int = 1     # run validation every N epochs
+    save_every_n:       int = 500   # save latest.pt every N steps (mid-epoch safety)
 
     # --- Runtime (set automatically, not by user) ---
     device: str = field(default='cpu', repr=True)

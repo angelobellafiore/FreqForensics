@@ -311,6 +311,11 @@ class Trainer:
                     + "  ".join(f"{k}={v:.4f}" for k, v in breakdown.items())
                 )
 
+            # Mid-epoch checkpoint — saves latest.pt every N steps so a
+            # killed session doesn't lose an entire epoch of progress
+            if self.global_step % self.cfg.save_every_n == 0:
+                self._save_latest(epoch)
+
             self.global_step += 1
 
         return running_loss / len(self.train_loader)
@@ -475,6 +480,20 @@ class Trainer:
 
         print(f"  Resumed at epoch {state['epoch']}  "
               f"global_step={self.global_step}  best_auc={self.best_auc:.4f}")
+
+    def _save_latest(self, epoch: int) -> None:
+        """Save latest.pt mid-epoch so a killed session loses at most save_every_n steps."""
+        self.cfg.output_dir.mkdir(parents=True, exist_ok=True)
+        state = {
+            'epoch':       epoch,
+            'global_step': self.global_step,
+            'model':       self.model.state_dict(),
+            'optimizer':   self.optimizer.state_dict(),
+            'scheduler':   self.scheduler.state_dict(),
+            'best_auc':    self.best_auc,
+            'config':      self.cfg.__dict__,
+        }
+        torch.save(state, self.cfg.output_dir / 'latest.pt')
 
     def _save_checkpoint(self, epoch: int, auc: float) -> None:
         state = {

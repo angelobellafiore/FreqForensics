@@ -8,9 +8,11 @@ Usage (local):
         --batch_size 32
 
 Usage (Colab / GPU):
-    python scripts/train.py \
+    !python scripts/train.py \
         --crops_csv /content/drive/MyDrive/FreqForensics/index_with_crops.csv \
         --output_dir /content/drive/MyDrive/FreqForensics/checkpoints \
+        --crops_root /content/drive/MyDrive/FreqForensics/crops \
+        --resume     /content/drive/MyDrive/FreqForensics/checkpoints/latest.pt \
         --epochs 20 \
         --batch_size 32 \
         --num_workers 2
