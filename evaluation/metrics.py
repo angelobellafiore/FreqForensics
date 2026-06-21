@@ -96,16 +96,21 @@ def evaluate(
     acc = float(((probs >= 0.5).astype(int) == labels).mean())
 
     # --- Per-method AUC ---
-    methods_arr  = np.array(all_methods)
-    unique_methods = sorted(set(all_methods))
+    # Each fake method only has label=1, so we pair it with all real samples
+    # (label=0) to compute a meaningful binary AUC per method.
+    methods_arr   = np.array(all_methods)
+    real_mask     = labels == 0
+    fake_methods  = sorted(m for m in set(all_methods) if m != 'original')
     per_method_auc: dict[str, float] = {}
 
-    for method in unique_methods:
-        mask = methods_arr == method
-        if mask.sum() < 2 or len(np.unique(labels[mask])) < 2:
-            # Need at least one positive and one negative to compute AUC
+    for method in fake_methods:
+        fake_mask = methods_arr == method
+        combined  = fake_mask | real_mask
+        if combined.sum() < 2:
             continue
-        per_method_auc[method] = float(roc_auc_score(labels[mask], probs[mask]))
+        per_method_auc[method] = float(
+            roc_auc_score(labels[combined], probs[combined])
+        )
 
     return MetricsResult(
         auc=auc,

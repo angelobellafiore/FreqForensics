@@ -55,7 +55,7 @@ def parse_args() -> argparse.Namespace:
 
 def load_model(checkpoint_path: Path, device: torch.device) -> FreqForensics:
     print(f"Loading checkpoint: {checkpoint_path}")
-    state = torch.load(checkpoint_path, map_location=device)
+    state = torch.load(checkpoint_path, map_location=device, weights_only=False)
 
     model = FreqForensics().to(device)
     model.load_state_dict(state['model'])
