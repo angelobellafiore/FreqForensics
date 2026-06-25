@@ -50,6 +50,9 @@ class TrainingConfig:
     val_every_n_epochs: int = 1     # run validation every N epochs
     save_every_n:       int = 500   # save latest.pt every N steps (mid-epoch safety)
 
+    # --- Ablation ---
+    spatial_only: bool = False  # train without LF/HF branches (retrained ablation)
+
     # --- Runtime (set automatically, not by user) ---
     device: str = field(default='cpu', repr=True)
 

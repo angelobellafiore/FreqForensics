@@ -248,12 +248,12 @@ class Trainer:
     def _setup_model(self) -> None:
         cfg = self.cfg
 
-        self.model    = FreqForensics().to(self.device)
+        self.model    = FreqForensics(spatial_only=cfg.spatial_only).to(self.device)
         self.loss_fn  = FreqForensicsLoss(
             lambda_aux=cfg.lambda_aux,
-            beta_local=cfg.beta_local,
-            beta_global=cfg.beta_global,
-            cam_every_n=cfg.cam_every_n,
+            beta_local=cfg.beta_local  if not cfg.spatial_only else 0.0,
+            beta_global=cfg.beta_global if not cfg.spatial_only else 0.0,
+            cam_every_n=cfg.cam_every_n if not cfg.spatial_only else 0,
         )
         self.optimizer = torch.optim.AdamW(
             filter(lambda p: p.requires_grad, self.model.parameters()),
@@ -262,7 +262,7 @@ class Trainer:
         )
         steps_per_epoch  = len(self.train_loader)
         self.scheduler   = _build_scheduler(self.optimizer, cfg, steps_per_epoch)
-        self.grad_cam    = GradCAM(self.model)
+        self.grad_cam    = GradCAM(self.model) if not cfg.spatial_only else None
 
     # ------------------------------------------------------------------
     # Training
@@ -334,19 +334,20 @@ class Trainer:
             self.model.forward_with_aux(images)
         )
 
-        # ----- Grad-CAM for L_local -----
+        # ----- Grad-CAM for L_local (skipped in spatial_only mode) -----
         cam_orig = cam_aug = None
         compute_cam = (
-            cfg.cam_every_n > 0
+            not cfg.spatial_only
+            and cfg.cam_every_n > 0
             and self.global_step % cfg.cam_every_n == 0
             and fake_mask.any()
         )
         if compute_cam:
             cam_orig = self.grad_cam(images[fake_mask])
 
-        # ----- Fo-Mixup augmented forward (fakes only) -----
+        # ----- Fo-Mixup augmented forward (skipped in spatial_only mode) -----
         f_orig = f_aug = None
-        if fake_mask.any() and real_mask.any():
+        if not cfg.spatial_only and fake_mask.any() and real_mask.any():
             x_fake = images[fake_mask]
             x_real = images[real_mask]
 

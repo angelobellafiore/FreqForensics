@@ -19,33 +19,33 @@ class FreqForensics(nn.Module):
       Fusion:   CrossBranchAttentionFusion        -> (B, 2304)
       Head:     ClassifierHead                    -> (B, 1)  logit
 
+    When spatial_only=True the LF/HF encoders and fusion are replaced by a
+    single linear head on top of the spatial features (retrained ablation).
+
     Use forward() at inference time.
     Use forward_with_aux() during training to get auxiliary logits and
     branch feature vectors needed for the consistency losses.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, spatial_only: bool = False) -> None:
         super().__init__()
+        self.spatial_only = spatial_only
 
         self.spatial_branch = SpatialBranch()
-        self.lf_encoder     = LowFreqEncoder()
-        self.hf_encoder     = HighFreqEncoder()
-        self.fusion         = CrossBranchAttentionFusion()
-        self.head           = ClassifierHead()
 
-        # Auxiliary heads — training only, prevent branch collapse
-        self.aux_s  = AuxiliaryHead(in_dim=1792)
-        self.aux_lf = AuxiliaryHead(in_dim=256)
-        self.aux_hf = AuxiliaryHead(in_dim=256)
+        if not spatial_only:
+            self.lf_encoder = LowFreqEncoder()
+            self.hf_encoder = HighFreqEncoder()
+            self.fusion     = CrossBranchAttentionFusion()
+            self.head       = ClassifierHead()
+            self.aux_lf     = AuxiliaryHead(in_dim=256)
+            self.aux_hf     = AuxiliaryHead(in_dim=256)
+        else:
+            # Lightweight head directly on spatial features
+            self.head = nn.Linear(1792, 1)
 
-    def _encode(
-        self, x: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Run all three branches and return raw feature vectors."""
-        f_s  = self.spatial_branch(x)
-        f_lf = self.lf_encoder(build_lf_tensor(x))
-        f_hf = self.hf_encoder(build_hf_tensor(x))
-        return f_s, f_lf, f_hf
+        # Auxiliary head for spatial branch is always present
+        self.aux_s = AuxiliaryHead(in_dim=1792)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Inference forward pass.
@@ -55,7 +55,11 @@ class FreqForensics(nn.Module):
         Returns:
             (B, 1) logit — apply sigmoid for probability
         """
-        f_s, f_lf, f_hf = self._encode(x)
+        f_s = self.spatial_branch(x)
+        if self.spatial_only:
+            return self.head(f_s)
+        f_lf  = self.lf_encoder(build_lf_tensor(x))
+        f_hf  = self.hf_encoder(build_hf_tensor(x))
         fused = self.fusion(f_s, f_lf, f_hf)
         return self.head(fused)
 
@@ -65,22 +69,26 @@ class FreqForensics(nn.Module):
                torch.Tensor, torch.Tensor, torch.Tensor]:
         """Training forward pass — returns logits and branch features.
 
+        In spatial_only mode, aux_lf/aux_hf and f_lf/f_hf are returned as
+        None so the trainer can skip frequency-specific loss terms.
+
         Args:
             x: (B, 3, 224, 224) ImageNet-normalised RGB tensor
         Returns:
-            logit:   (B, 1)   primary fused logit
-            aux_s:   (B, 1)   spatial branch auxiliary logit
-            aux_lf:  (B, 1)   LF branch auxiliary logit
-            aux_hf:  (B, 1)   HF branch auxiliary logit
-            f_s:     (B, 1792) spatial feature vector
-            f_lf:    (B, 256)  LF feature vector
-            f_hf:    (B, 256)  HF feature vector
+            logit, aux_s, aux_lf, aux_hf, f_s, f_lf, f_hf
+            (aux_lf, aux_hf, f_lf, f_hf are None in spatial_only mode)
         """
-        f_s, f_lf, f_hf = self._encode(x)
-        fused = self.fusion(f_s, f_lf, f_hf)
-        logit = self.head(fused)
+        f_s   = self.spatial_branch(x)
+        aux_s = self.aux_s(f_s)
 
-        aux_s  = self.aux_s(f_s)
+        if self.spatial_only:
+            logit = self.head(f_s)
+            return logit, aux_s, None, None, f_s, None, None
+
+        f_lf   = self.lf_encoder(build_lf_tensor(x))
+        f_hf   = self.hf_encoder(build_hf_tensor(x))
+        fused  = self.fusion(f_s, f_lf, f_hf)
+        logit  = self.head(fused)
         aux_lf = self.aux_lf(f_lf)
         aux_hf = self.aux_hf(f_hf)
 

@@ -60,6 +60,10 @@ def parse_args() -> argparse.Namespace:
     p.add_argument('--beta_global', type=float, default=None)
     p.add_argument('--cam_every_n', type=int,   default=None)
 
+    # Ablation
+    p.add_argument('--spatial_only', action='store_true', default=None,
+                   help='Train without LF/HF branches (retrained ablation baseline)')
+
     # Misc
     p.add_argument('--seed', type=int, default=None)
 
@@ -98,6 +102,7 @@ def main() -> None:
     print(f"  batch_size  : {cfg.batch_size}")
     print(f"  lr          : {cfg.lr}")
     print(f"  seed        : {cfg.seed}")
+    print(f"  spatial_only: {cfg.spatial_only}")
     print("=" * 60)
 
     resume = args.resume if hasattr(args, 'resume') else None

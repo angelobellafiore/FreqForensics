@@ -42,18 +42,19 @@ class FreqForensicsLoss(nn.Module):
 
     def l_aux(
         self,
-        aux_s:  torch.Tensor,   # (B, 1) spatial auxiliary logit
-        aux_lf: torch.Tensor,   # (B, 1) LF auxiliary logit
-        aux_hf: torch.Tensor,   # (B, 1) HF auxiliary logit
-        labels: torch.Tensor,   # (B,)   binary labels
+        aux_s:  torch.Tensor,           # (B, 1) spatial auxiliary logit
+        aux_lf: torch.Tensor | None,    # (B, 1) LF auxiliary logit; None in spatial_only
+        aux_hf: torch.Tensor | None,    # (B, 1) HF auxiliary logit; None in spatial_only
+        labels: torch.Tensor,           # (B,)   binary labels
     ) -> torch.Tensor:
-        """Sum of BCE losses on the three branch auxiliary logits."""
+        """Sum of BCE losses on branch auxiliary logits."""
         target = labels.float().unsqueeze(1)   # (B, 1)
-        return (
-            self.bce(aux_s,  target) +
-            self.bce(aux_lf, target) +
-            self.bce(aux_hf, target)
-        )
+        loss = self.bce(aux_s, target)
+        if aux_lf is not None:
+            loss = loss + self.bce(aux_lf, target)
+        if aux_hf is not None:
+            loss = loss + self.bce(aux_hf, target)
+        return loss
 
     @staticmethod # no learnable parameters, so can be staticmethod
     def l_local(
