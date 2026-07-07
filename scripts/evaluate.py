@@ -57,13 +57,14 @@ def load_model(checkpoint_path: Path, device: torch.device) -> FreqForensics:
     print(f"Loading checkpoint: {checkpoint_path}")
     state = torch.load(checkpoint_path, map_location=device, weights_only=False)
 
-    model = FreqForensics().to(device)
+    spatial_only = state.get('config', {}).get('spatial_only', False)
+    model = FreqForensics(spatial_only=spatial_only).to(device)
     model.load_state_dict(state['model'])
     model.eval()
 
     epoch = state.get('epoch', '?')
     auc   = state.get('best_auc', '?')
-    print(f"  Checkpoint epoch: {epoch}  |  best_auc (at save time): {auc}")
+    print(f"  Checkpoint epoch: {epoch}  |  best_auc (at save time): {auc}  |  spatial_only: {spatial_only}")
     return model
 
 
