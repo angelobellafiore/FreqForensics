@@ -1,6 +1,6 @@
 # FreqForensics
 
-Deepfake detection by combining spatial and frequency-domain analysis. The model runs three parallel branches on each input face crop — one spatial (EfficientNet-B4) and two frequency branches built on the Haar wavelet transform — and fuses them with a learned cross-branch attention mechanism trained with a frequency debiasing objective.
+Deepfake detection by combining spatial and frequency-domain analysis. The model runs three parallel branches on each input face crop (one spatial with EfficientNet-B4 and two frequency branches built on the Haar wavelet transform) and fuses them with a learned cross-branch attention mechanism trained with a frequency debiasing objective.
 
 Built as a solo project for the Signal Image and Video course, July 2026.
 
@@ -10,7 +10,7 @@ Built as a solo project for the Signal Image and Video course, July 2026.
 
 - The full triple-branch model reaches **AUC 0.927** on FaceForensics++ c23.
 - A retrained spatial-only baseline (EfficientNet-B4 alone) reaches **AUC 0.954**, outperforming the full model by 2.7 points across all four forgery methods.
-- Inference-time ablation confirms that the frequency branches do carry signal — removing them hurts FaceSwap and NeuralTextures in particular — but the frequency debiasing training recipe interferes with the spatial branch enough to offset the gain within-distribution.
+- Inference-time ablation confirms that the frequency branches do carry signal (removing them hurts FaceSwap and NeuralTextures in particular), but the frequency debiasing training recipe interferes with the spatial branch enough to offset the gain within-distribution.
 - Grad-CAM visualisations show the model learning **method-specific attention patterns** that match the known artifact locations for each forgery type: face boundary for Deepfakes, mouth region for Face2Face, full face for NeuralTextures.
 
 The gap between the two models points to a training recipe issue rather than an architectural one, and is itself the most interesting empirical result.
@@ -77,10 +77,10 @@ with $\lambda \sim \text{Beta}(0.5, 0.5)$ sampled per image. Fo-Mixup is applied
 
 $$L_{\text{total}} = L_{\text{BCE}} + 0.1 \cdot L_{\text{aux}} + 0.5 \cdot L_{\text{local}} + 0.5 \cdot L_{\text{global}}$$
 
-- $L_{\text{BCE}}$ — primary binary cross-entropy on the fused logit
-- $L_{\text{aux}}$ — sum of BCE losses on each branch's auxiliary head; prevents branch collapse
-- $L_{\text{local}}$ — L2 distance between Grad-CAM maps of an original fake and its Fo-Mixup version; forces spatially consistent attention
-- $L_{\text{global}}$ — vMF cosine dissimilarity between L2-normalised feature vectors of the same pair; forces representation consistency
+- $L_{\text{BCE}}$: primary binary cross-entropy on the fused logit
+- $L_{\text{aux}}$: sum of BCE losses on each branch's auxiliary head; prevents branch collapse
+- $L_{\text{local}}$: L2 distance between Grad-CAM maps of an original fake and its Fo-Mixup version; forces spatially consistent attention
+- $L_{\text{global}}$: vMF cosine dissimilarity between L2-normalised feature vectors of the same pair; forces representation consistency
 
 $$L_{\text{local}} = \left\| \text{CAM}(x_{\text{fake}}) - \text{CAM}(x_{\text{aug}}) \right\|_2^2$$
 
