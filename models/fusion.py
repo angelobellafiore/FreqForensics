@@ -10,7 +10,7 @@ class CrossBranchAttentionFusion(nn.Module):
     representation for the classifier head.
 
     Input:  F_s  (B, 1792), F_lf (B, 256), F_hf (B, 256)
-    Output: (B, 2304)  — concat of the three attended feature vectors
+    Output: (B, 2304) , concat of the three attended feature vectors
 
     Attention mechanism for a (query Q, key-value KV) pair:
       1. Project Q and KV to a common d_k=128 space
@@ -64,7 +64,7 @@ class CrossBranchAttentionFusion(nn.Module):
 
         Returns the residual-updated Q' = Q + sigmoid(dot(Q_proj, K_proj)) * V_proj(KV).
         The dot-product is summed over the D_K dimension to produce one scalar
-        per sample — a degenerate single-token attention weight.
+        per sample, a degenerate single-token attention weight.
         """
         a = torch.sigmoid((q_proj(q) * k_proj(k)).sum(dim=1, keepdim=True))  # (B, 1)
         return q + a * v_proj(v)
@@ -77,7 +77,7 @@ class CrossBranchAttentionFusion(nn.Module):
     ) -> torch.Tensor:
         """
         Returns:
-            (B, 2304) fused feature vector — concat of attended F_s', F_lf', F_hf'
+            (B, 2304) fused feature vector, concat of attended F_s', F_lf', F_hf'
         """
         # S <-> LF
         f_s  = self._attend(f_s,  self.q_s_lf,  f_lf, self.k_lf_s,  f_lf, self.v_lf_s)

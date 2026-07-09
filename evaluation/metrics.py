@@ -37,7 +37,7 @@ class MetricsResult:
     # Per-method AUC  {method_name: auc_score}
     per_method_auc: dict[str, float] = field(default_factory=dict)
 
-    # Raw arrays — kept for plotting ROC curves, calibration, etc.
+    # Raw arrays, kept for plotting ROC curves, calibration, etc.
     logits:  np.ndarray = field(default_factory=lambda: np.array([]))
     probs:   np.ndarray = field(default_factory=lambda: np.array([]))
     labels:  np.ndarray = field(default_factory=lambda: np.array([]))
@@ -128,7 +128,7 @@ def evaluate(
 def print_report(result: MetricsResult, split: str = 'test') -> None:
     """Print a formatted evaluation report to stdout."""
     print(f"\n{'=' * 50}")
-    print(f"  Evaluation results — {split}")
+    print(f"  Evaluation results, {split}")
     print(f"{'=' * 50}")
     print(f"  AUC-ROC  : {result.auc:.4f}")
     print(f"  Acc@0.5  : {result.acc:.4f}")
@@ -162,7 +162,7 @@ if __name__ == '__main__':
     B = 200
     images  = torch.rand(B, 3, 224, 224)
     labels  = torch.randint(0, 2, (B,))
-    # Simulate method strings — DataLoader returns tuples so we need a custom collate
+    # Simulate method strings, DataLoader returns tuples so we need a custom collate
     methods = ['Deepfakes'] * 50 + ['Face2Face'] * 50 + ['FaceSwap'] * 50 + ['original'] * 50
 
     # Package into a list-of-tuples dataset

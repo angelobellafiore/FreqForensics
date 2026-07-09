@@ -13,9 +13,9 @@ class FreqForensics(nn.Module):
     """Full triple-branch deepfake detector.
 
     Architecture:
-      Branch 1 — Spatial:       EfficientNet-B4  -> (B, 1792)
-      Branch 2 — Low-Frequency: LowFreqEncoder   -> (B, 256)
-      Branch 3 — High-Frequency: HighFreqEncoder -> (B, 256)
+      Branch 1, Spatial:       EfficientNet-B4  -> (B, 1792)
+      Branch 2, Low-Frequency: LowFreqEncoder   -> (B, 256)
+      Branch 3, High-Frequency: HighFreqEncoder -> (B, 256)
       Fusion:   CrossBranchAttentionFusion        -> (B, 2304)
       Head:     ClassifierHead                    -> (B, 1)  logit
 
@@ -53,7 +53,7 @@ class FreqForensics(nn.Module):
         Args:
             x: (B, 3, 224, 224) ImageNet-normalised RGB tensor
         Returns:
-            (B, 1) logit — apply sigmoid for probability
+            (B, 1) logit, apply sigmoid for probability
         """
         f_s = self.spatial_branch(x)
         if self.spatial_only:
@@ -67,7 +67,7 @@ class FreqForensics(nn.Module):
         self, x: torch.Tensor
     ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor,
                torch.Tensor, torch.Tensor, torch.Tensor]:
-        """Training forward pass — returns logits and branch features.
+        """Training forward pass, returns logits and branch features.
 
         In spatial_only mode, aux_lf/aux_hf and f_lf/f_hf are returned as
         None so the trainer can skip frequency-specific loss terms.
@@ -101,7 +101,7 @@ if __name__ == '__main__':
     sys.path.insert(0, os.path.dirname(__file__))
 
     print("Running smoke test for freqforensics.py...")
-    print("(Loading EfficientNet-B4 pretrained weights — may take a moment...)\n")
+    print("(Loading EfficientNet-B4 pretrained weights, may take a moment...)\n")
 
     model = FreqForensics()
     model.eval()

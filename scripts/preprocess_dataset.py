@@ -13,7 +13,7 @@ Usage (local):
         --crops_root /path/to/data/crops \
         --output_csv /path/to/data/index_with_crops.csv
 
-Usage (Colab — crops saved to Google Drive):
+Usage (Colab, crops saved to Google Drive):
     python scripts/preprocess_dataset.py \
         --index_csv  /content/drive/MyDrive/FreqForensics/index.csv \
         --crops_root /content/drive/MyDrive/FreqForensics/crops \

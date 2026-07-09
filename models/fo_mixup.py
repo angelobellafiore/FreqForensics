@@ -60,7 +60,6 @@ def subband_fo_mixup_ll(
                 Pass this to the LowFreqEncoder in place of the original LL
                 when computing consistency losses.
     """
-    # independently converted to grayscale to isolate geometric and luminance structures.
     gray_fake = to_grayscale(x_fake)
     gray_real = to_grayscale(x_real)
 
@@ -79,7 +78,7 @@ def subband_fo_mixup_hh(
 ) -> torch.Tensor:
     """Apply Fo-Mixup to the HH subband only for the high-frequency branch.
 
-    LH and HL are intentionally NOT mixed — they carry horizontal and vertical
+    LH and HL are intentionally NOT mixed, they carry horizontal and vertical
     edge information needed intact to detect blend boundary artifacts. Only HH
     (the subband most concentrated with GAN upsampling signatures: upsampling
     grids, texture over-smoothing, blend boundary residuals) is perturbed.
@@ -130,8 +129,8 @@ if __name__ == '__main__':
     gray_real = to_grayscale(x_real)
     _, _, _, HH_fake = haar_dwt2d(gray_fake)
     _, _, _, HH_real = haar_dwt2d(gray_real)
-    assert not torch.allclose(HH_aug, HH_fake), "HH_aug identical to HH_fake — mixing had no effect"
-    assert not torch.allclose(HH_aug, HH_real), "HH_aug identical to HH_real — mixing had no effect"
+    assert not torch.allclose(HH_aug, HH_fake), "HH_aug identical to HH_fake, mixing had no effect"
+    assert not torch.allclose(HH_aug, HH_real), "HH_aug identical to HH_real, mixing had no effect"
     print("  Mixing verification: augmented != fake and augmented != real  OK")
 
     print("\nAll assertions passed.")

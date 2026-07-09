@@ -218,7 +218,7 @@ def main() -> None:
             cams_np.append(cam.squeeze(0).cpu().numpy())
             pred_probs.append(prob)
 
-        label   = 'Real' if method == 'original' else f'Fake — {method}'
+        label   = 'Real' if method == 'original' else f'Fake, {method}'
         outfile = args.output_dir / f'gradcam_{method}.png'
 
         plot_examples(images_np, cams_np, label, outfile, pred_probs)

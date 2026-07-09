@@ -9,7 +9,7 @@ class SpatialBranch(nn.Module):
     Input:  (B, 3, 224, 224) normalised RGB tensor
     Output: (B, 1792) spatial feature vector
 
-    Blocks 0-5 are frozen — they extract low-level features (edges, textures,
+    Blocks 0-5 are frozen, they extract low-level features (edges, textures,
     shapes) that transfer directly from ImageNet. Block 6, conv_head, and all
     BatchNorm layers are unfrozen for minor adaptation to face manipulation signals.
 
@@ -24,7 +24,7 @@ class SpatialBranch(nn.Module):
             'efficientnet_b4',
             pretrained=True,
             num_classes=0,        # remove classification head
-            global_pool='avg',    # global average pooling -> (B, 1792). We keep the spatial features separate from the LF/HF branches, so no need for a projection here.
+            global_pool='avg',    # global average pooling -> (B, 1792)
         )
 
         self._apply_freeze_strategy()
@@ -42,7 +42,7 @@ class SpatialBranch(nn.Module):
         for param in self.backbone.conv_head.parameters():
             param.requires_grad = True
 
-        # Unfreeze all BatchNorm layers — their statistics must adapt
+        # Unfreeze all BatchNorm layers, their statistics must adapt
         # to the face crop distribution
         for module in self.backbone.modules():
             if isinstance(module, nn.BatchNorm2d):

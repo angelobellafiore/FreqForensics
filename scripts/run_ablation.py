@@ -5,10 +5,10 @@ before fusion. This approximates the contribution of each branch without
 requiring full retraining.
 
 Ablation variants:
-  full          — all three branches active (baseline)
-  spatial_only  — LF and HF branches zeroed out
-  no_lf         — LF branch zeroed out
-  no_hf         — HF branch zeroed out
+  full         , all three branches active (baseline)
+  spatial_only , LF and HF branches zeroed out
+  no_lf        , LF branch zeroed out
+  no_hf        , HF branch zeroed out
 
 Note: loss-term ablations (no Fo-Mixup, no L_local, no L_global) require
 retraining and are not included here.
@@ -160,7 +160,7 @@ def main() -> None:
 
     # --- Summary table ---
     print(f"\n{'=' * 40}")
-    print(f"  Ablation summary — AUC-ROC ({args.split})")
+    print(f"  Ablation summary, AUC-ROC ({args.split})")
     print(f"{'=' * 40}")
     full_auc = results['full']
     for name, auc in results.items():

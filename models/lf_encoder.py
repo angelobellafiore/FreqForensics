@@ -5,7 +5,7 @@ import torch.nn as nn
 class LowFreqEncoder(nn.Module):
     """Encode the two-channel LF tensor (LL + LL2) into a 256-d feature vector.
 
-    Input:  (B, 2, 112, 112)  — from build_lf_tensor()
+    Input:  (B, 2, 112, 112) , from build_lf_tensor()
     Output: (B, 256)
 
     Three strided conv blocks progressively halve the spatial resolution while

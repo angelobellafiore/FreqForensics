@@ -93,7 +93,7 @@ def main() -> None:
     set_seed(cfg.seed)
 
     print("=" * 60)
-    print("FreqForensics — Training")
+    print("FreqForensics, Training")
     print("=" * 60)
     print(f"  device      : {cfg.device}")
     print(f"  crops_csv   : {cfg.crops_csv}")

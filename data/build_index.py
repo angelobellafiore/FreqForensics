@@ -121,7 +121,7 @@ def build_index(
         f"DATA LEAK: {len(overlap)} video_id(s) appear in both train and test: "
         f"{list(overlap)[:5]}"
     )
-    print("  No leakage detected — train and test video IDs are disjoint  OK")
+    print("No leakage detected, train and test video IDs are disjoint:  OK")
 
     # --- Split summary ---
     for split_name in ('train', 'val', 'test'):

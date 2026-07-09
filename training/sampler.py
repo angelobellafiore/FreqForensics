@@ -31,7 +31,7 @@ def make_weighted_sampler(df: pd.DataFrame) -> WeightedRandomSampler:
     w_fake = 1.0 / n_fake
 
     # One weight per sample
-    sample_weights = torch.where(   # torch.where is like np.where but for tensors. It takes a condition and two tensors of the same shape, and returns a new tensor where each element is taken from the first tensor if the condition is True, and from the second tensor if the condition is False.
+    sample_weights = torch.where(   # assign w_real to real samples, w_fake to fake samples
         torch.tensor(labels == 0),
         torch.tensor(w_real, dtype=torch.float64),
         torch.tensor(w_fake, dtype=torch.float64),
@@ -69,5 +69,5 @@ if __name__ == '__main__':
     total = n_real + n_fake
     print(f"  Drew {total:,} samples: real={n_real:,} ({n_real/total:.1%})  "
           f"fake={n_fake:,} ({n_fake/total:.1%})")
-    assert 0.45 < n_real / total < 0.55, "Class balance is off — expected ~50/50"
+    assert 0.45 < n_real / total < 0.55, "Class balance is off, expected ~50/50"
     print("\nAll assertions passed.")

@@ -3,7 +3,7 @@
 Handles:
   - Data loading with WeightedRandomSampler
   - Per-batch Fo-Mixup on fake samples
-  - forward_with_aux → FreqForensicsLoss
+  - forward_with_aux -> FreqForensicsLoss
   - Grad-CAM computation every N steps for L_local
   - Cosine LR schedule with linear warmup
   - Validation with AUC + accuracy
@@ -83,10 +83,10 @@ class GradCAM:
         grads = self._gradients                     # (B, C, H', W')
         acts  = self._activations                   # (B, C, H', W')
 
-        # Global average pool the gradients → channel weights (B, C, 1, 1)
+        # Global average pool the gradients -> channel weights (B, C, 1, 1)
         weights = grads.mean(dim=(2, 3), keepdim=True)
 
-        # Weighted sum of activations → (B, H', W')
+        # Weighted sum of activations -> (B, H', W')
         cam = (weights * acts).sum(dim=1)
         cam = torch.clamp(cam, min=0)               # ReLU
 
@@ -110,6 +110,7 @@ def _build_scheduler(
     cfg: TrainingConfig,
     steps_per_epoch: int,
 ) -> torch.optim.lr_scheduler.LambdaLR:
+    """Return a LambdaLR that linearly warms up for warmup_epochs then follows a cosine decay."""
     warmup_steps = cfg.warmup_epochs * steps_per_epoch
     total_steps  = cfg.epochs        * steps_per_epoch
     lr_min_ratio = cfg.lr_min / cfg.lr
@@ -159,16 +160,8 @@ def _apply_fo_mixup(
         repeats = -(-n_fake // n_real)            # ceil division
         x_real  = x_real.repeat(repeats, 1, 1, 1)[:n_fake]
 
-    # We don't modify the spatial pixels, only the frequency representations
-    # used by the LF/HF branches. We reconstruct a modified image by blending
-    # back only the HH component into the original image in the spatial domain.
-    # The spatial branch always sees the original, unmodified image.
-    #
-    # Here we return the original image unchanged — the Fo-Mixup tensors are
-    # computed inside the model via build_lf_tensor / build_hf_tensor with
-    # the augmented subbands substituted. See Trainer._forward_aug().
     x_aug = images.clone()
-    return x_aug   # spatial pixels unchanged; subband blending happens in _forward_aug
+    return x_aug   # spatial pixels unchanged; subband blending happens in _build_fo_mixup_image
 
 
 # ---------------------------------------------------------------------------
@@ -176,8 +169,10 @@ def _apply_fo_mixup(
 # ---------------------------------------------------------------------------
 
 class Trainer:
+    """Manages the full training lifecycle: data, model, optimiser, and checkpoints."""
 
     def __init__(self, cfg: TrainingConfig, resume_from: Path | None = None) -> None:
+        """Initialise the trainer, set up data and model, and optionally resume from a checkpoint."""
         self.cfg    = cfg
         self.device = torch.device(cfg.device)
 
@@ -196,6 +191,7 @@ class Trainer:
     # ------------------------------------------------------------------
 
     def _setup_data(self) -> None:
+        """Load the CSV index, build train/val datasets, and create DataLoaders."""
         cfg = self.cfg
         print(f"Loading index: {cfg.crops_csv}")
         df = pd.read_csv(cfg.crops_csv)
@@ -207,10 +203,9 @@ class Trainer:
                 df['path']
             )
 
-        # Rewrite path prefix when running on a different machine (e.g. Colab).
-        # The CSV was built locally with absolute paths like /home/angelo/...
-        # On Colab the crops live under a different root, so we keep only the
-        # relative tail (method/video_id/frame.png) and prepend crops_root.
+        # Rewrite path prefix when running on a different machine.
+        # The CSV stores absolute paths, so we keep only the relative tail
+        # (method/video_id/frame.png) and prepend crops_root.
         if cfg.crops_root is not None:
             import re
             # Tail is the last 3 path components: method/video_id/frame.png
@@ -246,6 +241,7 @@ class Trainer:
         )
 
     def _setup_model(self) -> None:
+        """Instantiate FreqForensics, the composite loss, AdamW, and the LR scheduler."""
         cfg = self.cfg
 
         self.model    = FreqForensics(spatial_only=cfg.spatial_only).to(self.device)
@@ -269,6 +265,7 @@ class Trainer:
     # ------------------------------------------------------------------
 
     def train(self) -> None:
+        """Run the full training loop for cfg.epochs epochs, validating and checkpointing as configured."""
         cfg = self.cfg
         cfg.output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -294,6 +291,7 @@ class Trainer:
                 )
 
     def _train_epoch(self, epoch: int) -> float:
+        """Run one epoch of training and return the average loss over all batches."""
         self.model.train()
         running_loss = 0.0
 
@@ -311,7 +309,7 @@ class Trainer:
                     + "  ".join(f"{k}={v:.4f}" for k, v in breakdown.items())
                 )
 
-            # Mid-epoch checkpoint — saves latest.pt every N steps so a
+            # Mid-epoch checkpoint, saves latest.pt every N steps so a
             # killed session doesn't lose an entire epoch of progress
             if self.global_step % self.cfg.save_every_n == 0:
                 self._save_latest(epoch)
@@ -325,16 +323,17 @@ class Trainer:
         images: torch.Tensor,
         labels: torch.Tensor,
     ) -> tuple[float, dict]:
+        """Run one forward+backward step and return (loss scalar, breakdown dict)."""
         cfg       = self.cfg
         fake_mask = (labels == 1)
         real_mask = (labels == 0)
 
-        # ----- Forward pass (original) -----
+        # Forward pass (original)
         logit, aux_s, aux_lf, aux_hf, f_s, f_lf, f_hf = (
             self.model.forward_with_aux(images)
         )
 
-        # ----- Grad-CAM for L_local (skipped in spatial_only mode) -----
+        # Grad-CAM for L_local (skipped in spatial_only mode)
         cam_orig = cam_aug = None
         compute_cam = (
             not cfg.spatial_only
@@ -345,7 +344,7 @@ class Trainer:
         if compute_cam:
             cam_orig = self.grad_cam(images[fake_mask])
 
-        # ----- Fo-Mixup augmented forward (skipped in spatial_only mode) -----
+        # Fo-Mixup augmented forward (skipped in spatial_only mode)
         f_orig = f_aug = None
         if not cfg.spatial_only and fake_mask.any() and real_mask.any():
             x_fake = images[fake_mask]
@@ -372,7 +371,7 @@ class Trainer:
             if compute_cam:
                 cam_aug = self.grad_cam(x_aug)
 
-        # ----- Loss -----
+        # Loss
         total, breakdown = self.loss_fn(
             logit=logit, labels=labels,
             aux_s=aux_s, aux_lf=aux_lf, aux_hf=aux_hf,
@@ -381,7 +380,7 @@ class Trainer:
             cam_orig=cam_orig, cam_aug=cam_aug,
         )
 
-        # ----- Backward -----
+        # Backward
         self.optimizer.zero_grad()
         total.backward()
         nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
@@ -444,6 +443,7 @@ class Trainer:
 
     @torch.no_grad()
     def _validate(self) -> tuple[float, float]:
+        """Run inference on the validation set and return (AUC-ROC, accuracy)."""
         self.model.eval()
         all_logits = []
         all_labels = []
@@ -469,6 +469,7 @@ class Trainer:
     # ------------------------------------------------------------------
 
     def _load_checkpoint(self, path: Path) -> None:
+        """Restore model, optimiser, scheduler, and counters from a saved checkpoint."""
         print(f"Resuming from checkpoint: {path}")
         state = torch.load(path, map_location=self.device, weights_only=False)
 
@@ -497,6 +498,7 @@ class Trainer:
         torch.save(state, self.cfg.output_dir / 'latest.pt')
 
     def _save_checkpoint(self, epoch: int, auc: float) -> None:
+        """Save latest.pt every epoch and best.pt whenever a new best AUC is reached."""
         state = {
             'epoch':       epoch,
             'global_step': self.global_step,
@@ -516,7 +518,7 @@ class Trainer:
             self.best_auc = auc
             best_path = self.cfg.output_dir / 'best.pt'
             torch.save(state, best_path)
-            print(f"  ** New best AUC: {auc:.4f} — saved to {best_path}")
+            print(f"  ** New best AUC: {auc:.4f}, saved to {best_path}")
 
     def _current_lr(self) -> float:
         return self.optimizer.param_groups[0]['lr']

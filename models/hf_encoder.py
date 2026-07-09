@@ -5,7 +5,7 @@ import torch.nn as nn
 class HighFreqEncoder(nn.Module):
     """Encode the three-channel HF tensor (LH + HL + HH) into a 256-d feature vector.
 
-    Input:  (B, 3, 112, 112)  — from build_hf_tensor()
+    Input:  (B, 3, 112, 112) , from build_hf_tensor()
     Output: (B, 256)
 
     Structurally identical to LowFreqEncoder but with 3 input channels instead

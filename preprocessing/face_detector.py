@@ -6,7 +6,7 @@ from facenet_pytorch import MTCNN
 
 # Canonical landmark positions for a 224x224 aligned face crop.
 # These fixed target coordinates define where each facial feature should
-# appear after alignment — regardless of the original pose or scale.
+# appear after alignment, regardless of the original pose or scale.
 # Values are derived from standard face alignment templates used in the
 # deepfake detection literature (e.g. FF++, FaceForensics baselines).
 CANONICAL_LANDMARKS = np.array([
@@ -22,11 +22,11 @@ def build_mtcnn(device: str = 'cpu') -> MTCNN:
     """Instantiate MTCNN with custom parameters for face detection and alignment.
 
     Key choices:
-      image_size=224  — output crop matches EfficientNet-B4 input size
-      margin=32       — 32px context around the bounding box captures the blend
+      image_size=224 , output crop matches EfficientNet-B4 input size
+      margin=32      , 32px context around the bounding box captures the blend
                         boundary region which contains critical manipulation artifacts
-      min_face_size=80 — ignores tiny background faces in crowd or multi-person shots
-      keep_all=False  — return only the largest/highest-confidence face per frame
+      min_face_size=80, ignores tiny background faces in crowd or multi-person shots
+      keep_all=False , return only the largest/highest-confidence face per frame
     """
     # MTCNN crops the face region in order to run the landmark detection
     return MTCNN(
@@ -35,7 +35,7 @@ def build_mtcnn(device: str = 'cpu') -> MTCNN:
         min_face_size=80,
         thresholds=[0.6, 0.7, 0.7],
         keep_all=False,
-        post_process=False,   # return pixel values in [0, 255], not normalised. By default, facenet-pytorch normalises the crop to [-1, 1]. We don't want that: we apply our own ImageNet normalisation later. See _align_face()
+        post_process=False,   # keep pixel values in [0, 255]; ImageNet normalisation is applied later
         device=device,
     )
 
@@ -43,7 +43,7 @@ def build_mtcnn(device: str = 'cpu') -> MTCNN:
 def _align_face(image: np.ndarray, landmarks: np.ndarray, output_size: int = 224) -> Image.Image:
     """Apply a similarity transform to align detected landmarks to the canonical template.
 
-    A similarity transform preserves shape — it only allows rotation, uniform
+    A similarity transform preserves shape, it only allows rotation, uniform
     scaling, and translation (no shear, no independent x/y scaling). This is
     the right choice for faces: we want to remove pose variation without
     distorting facial proportions.
@@ -66,7 +66,7 @@ def _align_face(image: np.ndarray, landmarks: np.ndarray, output_size: int = 224
     )
 
     if transform_matrix is None:
-        # Landmark fitting failed completely — fall back to centre crop
+        # Landmark fitting failed completely, fall back to centre crop
         return _centre_crop(Image.fromarray(image), output_size)
 
     # Apply the affine warp to the full image
@@ -107,7 +107,7 @@ def detect_and_align(
     """Detect the largest face in an image, align it, and return a square crop.
 
     Args:
-        image:       PIL Image (RGB) — one video frame
+        image:       PIL Image (RGB), one video frame
         mtcnn:       MTCNN instance from build_mtcnn()
         output_size: side length of the output crop (default 224)
 

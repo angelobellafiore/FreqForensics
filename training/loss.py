@@ -2,11 +2,11 @@
 
 L_total = L_BCE + lambda * L_aux + beta1 * L_local + beta2 * L_global
 
-L_BCE   — primary binary cross-entropy on the fused logit
-L_aux   — sum of BCE on the three auxiliary branch logits (prevents branch collapse)
-L_local — CAM alignment: L2 distance between Grad-CAM maps of original and
+L_BCE  , primary binary cross-entropy on the fused logit
+L_aux  , sum of BCE on the three auxiliary branch logits (prevents branch collapse)
+L_local, CAM alignment: L2 distance between Grad-CAM maps of original and
            augmented fake (forces spatially consistent forgery localisation)
-L_global — vMF cosine consistency: 1 - cosine_similarity between L2-normalised
+L_global, vMF cosine consistency: 1 - cosine_similarity between L2-normalised
             feature vectors of original and augmented fake
 """
 
@@ -61,8 +61,7 @@ class FreqForensicsLoss(nn.Module):
         cam_orig: torch.Tensor,   # (B, H, W) Grad-CAM of original fakes
         cam_aug:  torch.Tensor,   # (B, H, W) Grad-CAM of augmented fakes
     ) -> torch.Tensor:
-        """L2 distance between CAM maps — forces spatial cCalculating loss (like Cross-Entropy Loss) directly on logits rather than squashed probabilitiesonsistency under
-        frequency perturbation."""
+        """L2 distance between Grad-CAM maps. Penalises the model for shifting its attention when the frequency content changes."""
         return F.mse_loss(cam_orig, cam_aug)
 
     @staticmethod
@@ -95,7 +94,7 @@ class FreqForensicsLoss(nn.Module):
 
         Returns:
             total:    scalar loss tensor (differentiable)
-            breakdown: {term: float} for logging — detached from graph
+            breakdown: {term: float} for logging, detached from graph
         """
         target = labels.float().unsqueeze(1)   # (B, 1)
 
@@ -140,7 +139,7 @@ if __name__ == '__main__':
     B, D = 8, 256
     loss_fn = FreqForensicsLoss()
 
-    logit  = torch.randn(B, 1, requires_grad=True)  # we have to specify requires_grad=True, otherwise by default it is False and we need to know the gradients in order to do .backward()
+    logit  = torch.randn(B, 1, requires_grad=True)  # needs grad so .backward() works
     labels = torch.randint(0, 2, (B,))
     aux_s  = torch.randn(B, 1, requires_grad=True)
     aux_lf = torch.randn(B, 1, requires_grad=True)

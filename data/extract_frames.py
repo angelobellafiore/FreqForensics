@@ -41,7 +41,7 @@ METHODS = {
 def extract_video(mp4_path: Path, out_dir: Path, stride: int) -> int:
     """Extract every <stride>-th frame from a single video.
 
-    Skips extraction if out_dir already contains PNG files — allows safe
+    Skips extraction if out_dir already contains PNG files, allows safe
     re-runs after interruption without re-processing completed videos.
 
     Returns the number of frames extracted (0 if skipped).

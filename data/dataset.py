@@ -16,7 +16,7 @@ class FFPPDataset(Dataset):
     The CSV must contain columns: path, label, video_id, method, split.
 
     The caller is responsible for filtering the DataFrame to the desired
-    split before instantiating this class — the Dataset itself is split-agnostic.
+    split before instantiating this class, the Dataset itself is split-agnostic.
 
     Args:
         df:       DataFrame filtered to the desired split (train / val / test)
@@ -48,7 +48,7 @@ if __name__ == '__main__':
     import torch
 
     print("Running smoke test for dataset.py...")
-    print("(Uses a synthetic in-memory DataFrame — no real data required)\n")
+    print("(Uses a synthetic in-memory DataFrame, no real data required)\n")
 
     import tempfile
     import numpy as np

@@ -5,8 +5,8 @@ import torch.nn as nn
 class ClassifierHead(nn.Module):
     """MLP classifier over the 2304-d fused feature vector.
 
-    Input:  (B, 2304)  — from CrossBranchAttentionFusion
-    Output: (B, 1)     — single logit (sigmoid applied at loss/inference time)
+    Input:  (B, 2304) , from CrossBranchAttentionFusion
+    Output: (B, 1)    , single logit (sigmoid applied at loss/inference time)
 
     BatchNorm1d normalises the combined spatial+frequency distribution, which
     can have very different scales across the two components. Dropout(0.5)
@@ -19,10 +19,10 @@ class ClassifierHead(nn.Module):
 
         self.mlp = nn.Sequential(
             nn.Linear(2304, 256),
-            nn.BatchNorm1d(256),        # 1d because the input is a flat vector, not a spatial map. It normalises the combined spatial+frequency features which can have very different scales.
+            nn.BatchNorm1d(256),        # 1d: input is a flat vector, not a spatial map
             nn.ReLU(inplace=True),
-            nn.Dropout(p=0.5),          # strong regularisation at the fusion point where overfitting to method-specific feature combinations is most likely
-            nn.Linear(256, 1),          # sigmoid applied at loss/inference time. It produces the single logit output for binary classification.
+            nn.Dropout(p=0.5),          # strong regularisation at the fusion point
+            nn.Linear(256, 1),          # sigmoid applied at loss/inference time
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -30,7 +30,7 @@ class ClassifierHead(nn.Module):
         Args:
             x: (B, 2304) fused feature vector
         Returns:
-            (B, 1) logit — no sigmoid applied here
+            (B, 1) logit, no sigmoid applied here
         """
         return self.mlp(x)
 
@@ -38,11 +38,11 @@ class ClassifierHead(nn.Module):
 class AuxiliaryHead(nn.Module):
     """Single-layer classifier attached directly to one branch's feature vector.
 
-    Used during training only to prevent branch collapse — forces each branch
+    Used during training only to prevent branch collapse, forces each branch
     to independently carry the classification signal. Detached at inference time.
 
-    Input:  (B, in_dim)  — raw branch feature vector before fusion
-    Output: (B, 1)       — logit
+    Input:  (B, in_dim) , raw branch feature vector before fusion
+    Output: (B, 1)      , logit
     """
 
     def __init__(self, in_dim: int) -> None:
