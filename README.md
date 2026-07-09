@@ -56,7 +56,7 @@ The LF branch receives LL at two scales (level-1 and level-2, upsampled back to 
 
 Rather than simple concatenation, each branch attends to each other branch. For a query branch $a$ and a key-value branch $b$:
 
-$$\alpha_{a \to b} = \sigma\!\left(Q_a(f_a) \cdot K_b(f_b)^T\right), \qquad f_a' = f_a + \alpha_{a \to b} \cdot V_b(f_b)$$
+$$\alpha_{a \to b} = \sigma\left(Q_a(f_a) \cdot K_b(f_b)^T\right), \qquad f_a' = f_a + \alpha_{a \to b} \cdot V_b(f_b)$$
 
 where $Q, K, V$ are learned linear projections to a common 128-d space and $\sigma$ is the sigmoid function. All six pairwise directions (s↔lf, s↔hf, lf↔hf) are computed, then the three attended vectors are concatenated into a 2304-d fused representation.
 
